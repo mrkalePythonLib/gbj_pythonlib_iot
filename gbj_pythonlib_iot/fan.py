@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """Module for supporting cooling fan."""
-__version__ = '0.1.0'
+__version__ = '0.2.0'
 __status__ = 'Beta'
 __author__ = 'Libor Gabaj'
 __copyright__ = 'Copyright 2019, ' + __author__
@@ -75,6 +75,21 @@ class Fan(object):
     # -------------------------------------------------------------------------
     # Setters
     # -------------------------------------------------------------------------
+    def set_status(self, status=None):
+        """Save recently detected status.
+
+        Arguments
+        ---------
+        status : int
+            Status code normalized.
+
+        """
+        self._status = status
+
+    def set_pin(self, pin):
+        """Save microcomputer pin name to control a fan."""
+        self._pin = pin
+
     def set_percentage_on(self, percentage=None):
         """Save start temperature percentage.
 
@@ -145,24 +160,17 @@ class Fan(object):
                 )
         self.set_percentage_off(percentage)
 
-    def set_status(self, status=None):
-        """Save recently detected status.
-
-        Arguments
-        ---------
-        status : int
-            Status code normalized.
-
-        """
-        self._status = status
-
-    def set_pin(self, pin):
-        """Save microcomputer pin name to control a fan."""
-        self._pin = pin
-
     # -------------------------------------------------------------------------
     # Getters
     # -------------------------------------------------------------------------
+    def get_pin(self):
+        """Return microcomputer fan control pin name."""
+        return self._pin
+
+    def get_status(self):
+        """Return status code recently saved."""
+        return self._status
+
     def get_percentage_on(self):
         """Return start temperature percentage recently saved."""
         return self._percentage_on
@@ -179,10 +187,15 @@ class Fan(object):
         """Return stop temperature recently saved."""
         return self._temperature_off
 
-    def get_status(self):
-        """Return status code recently saved."""
-        return self._status
+    def get_temperature_max(self):
+        """Return maximal SoC temperature in centigrades."""
+        return self._system.get_temperature_maximal()
 
-    def get_pin(self):
-        """Return microcomputer fan control pin name."""
-        return self._pin
+    def get_temperature(self):
+        """Return current SoC temperature in centigrades."""
+        return self._system.get_temperature()
+
+    def get_percentage(self):
+        """Return current SoC temperature percentage."""
+        return self._system.calculate_temperature_percentage(
+            self._system.get_temperature())
