@@ -49,10 +49,7 @@ class Fan(object):
 
     def __init__(self, pin='PA13'):
         """Create the class instance - constructor."""
-        # Utilized IoT devices
         self._system = iot_system.System()
-        # Set default values
-        self.reset()
         self.set_status()
         self.set_pin(pin)
         # Logging
@@ -62,6 +59,8 @@ class Fan(object):
             self.__class__.__name__,
             str(self)
             )
+        # Set default values
+        self.reset()
 
     def __str__(self):
         """Represent instance object as a string."""
@@ -106,6 +105,11 @@ class Fan(object):
         self._percentage_on = percentage
         self._temperature_on = \
             self._system.calculate_temperature_value(self._percentage_on)
+        self._logger.debug(
+            'Percentage ON set to %s%% (%s°C)',
+            self._percentage_on,
+            self._temperature_on
+            )
 
     def set_percentage_off(self, percentage=None):
         """Save stop temperature percentage.
@@ -123,6 +127,11 @@ class Fan(object):
         self._percentage_off = percentage
         self._temperature_off = \
             self._system.calculate_temperature_value(self._percentage_off)
+        self._logger.debug(
+            'Percentage OFF set to %s%% (%s°C)',
+            self._percentage_off,
+            self._temperature_off
+            )
 
     def set_temperature_on(self, temperature=None):
         """Save start temperature.
