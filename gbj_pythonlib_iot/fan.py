@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """Module for supporting cooling fan."""
-__version__ = '0.2.0'
+__version__ = '0.3.0'
 __status__ = 'Beta'
 __author__ = 'Libor Gabaj'
 __copyright__ = 'Copyright 2019, ' + __author__
@@ -64,7 +64,17 @@ class Fan(object):
 
     def __str__(self):
         """Represent instance object as a string."""
-        return 'CoolingFan ({})'.format(self.get_pin())
+        msg = \
+            f'CoolingFan(' \
+            f'{self.get_pin()})'
+        return msg
+
+    def __repr__(self):
+        """Represent instance object officially."""
+        msg = \
+            f'{self.__class__.__name__}(' \
+            f'pin={repr(self.get_pin())})'
+        return msg
 
     def reset(self):
         """Set all the default parameters."""

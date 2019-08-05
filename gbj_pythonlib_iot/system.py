@@ -6,7 +6,7 @@
   value, so that they are consistent.
 
 """
-__version__ = '0.2.0'
+__version__ = '0.3.0'
 __status__ = 'Beta'
 __author__ = 'Libor Gabaj'
 __copyright__ = 'Copyright 2019, ' + __author__
@@ -59,7 +59,17 @@ class System(object):
 
     def __str__(self):
         """Represent instance object as a string."""
-        return 'Microcomputer ({}°C)'.format(self._temperature_max)
+        msg = \
+            f'Microcomputer(' \
+            f'{float(self._temperature_max)}°C)'
+        return msg
+
+    def __repr__(self):
+        """Represent instance object officially."""
+        msg = \
+            f'{self.__class__.__name__}(' \
+            f'smoothing_factor={repr(self._filter.get_factor())})'
+        return msg
 
     def _read_temperature(self, system_path):
         """Read system file and interpret the content as the temperature.
