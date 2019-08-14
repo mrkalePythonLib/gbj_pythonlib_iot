@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """Module for supporting cooling fan."""
-__version__ = '0.3.0'
+__version__ = '0.4.0'
 __status__ = 'Beta'
 __author__ = 'Libor Gabaj'
 __copyright__ = 'Copyright 2019, ' + __author__
@@ -50,8 +50,9 @@ class Fan(object):
     def __init__(self, pin='PA13'):
         """Create the class instance - constructor."""
         self._system = iot_system.System()
-        self.set_status()
-        self.set_pin(pin)
+        self.pin = pin
+        self.status = None
+        self.reset()
         # Logging
         self._logger = logging.getLogger(' '.join([__name__, __version__]))
         self._logger.debug(
@@ -59,47 +60,48 @@ class Fan(object):
             self.__class__.__name__,
             str(self)
             )
-        # Set default values
-        self.reset()
 
     def __str__(self):
         """Represent instance object as a string."""
         msg = \
             f'CoolingFan(' \
-            f'{self.get_pin()})'
+            f'{self.pin})'
         return msg
 
     def __repr__(self):
         """Represent instance object officially."""
         msg = \
             f'{self.__class__.__name__}(' \
-            f'pin={repr(self.get_pin())})'
+            f'pin={repr(self.pin)})'
         return msg
 
-    def reset(self):
-        """Set all the default parameters."""
-        self.set_percentage_on()
-        self.set_percentage_off()
+    @property
+    def pin(self):
+        """Microcomputer fan control pin name."""
+        return self._pin
 
-    # -------------------------------------------------------------------------
-    # Setters
-    # -------------------------------------------------------------------------
-    def set_status(self, status=None):
-        """Save recently detected status.
-
-        Arguments
-        ---------
-        status : int
-            Status code normalized.
-
-        """
-        self._status = status
-
-    def set_pin(self, pin):
-        """Save microcomputer pin name to control a fan."""
+    @pin.setter
+    def pin(self, pin):
+        """Set microcomputer pin name to control a fan."""
         self._pin = pin
 
-    def set_percentage_on(self, percentage=None):
+    @property
+    def status(self):
+        """Status code recently."""
+        return self._status
+
+    @status.setter
+    def status(self, status=None):
+        """Save recently detected status."""
+        self._status = status
+
+    @property
+    def percentage_on(self):
+        """Start temperature percentage recently saved."""
+        return self._percentage_on
+
+    @percentage_on.setter
+    def percentage_on(self, percentage=None):
         """Save start temperature percentage.
 
         Arguments
@@ -107,7 +109,7 @@ class Fan(object):
         percentage : float
             Temperature in percentage of maximal temperature at which the fan
             starts cooling.
-            If not provided, the default value is used
+            If None provided, the default value is used
 
         """
         percentage = \
@@ -115,13 +117,14 @@ class Fan(object):
         self._percentage_on = percentage
         self._temperature_on = \
             self._system.calculate_temperature_value(self._percentage_on)
-        self._logger.debug(
-            'Percentage ON set to %s%% (%s°C)',
-            self._percentage_on,
-            self._temperature_on
-            )
 
-    def set_percentage_off(self, percentage=None):
+    @property
+    def percentage_off(self):
+        """Stop temperature percentage recently saved."""
+        return self._percentage_off
+
+    @percentage_off.setter
+    def percentage_off(self, percentage=None):
         """Save stop temperature percentage.
 
         Arguments
@@ -129,7 +132,7 @@ class Fan(object):
         percentage : float
             Temperature in percentage of maximal temperature at which the fan
             stops cooling.
-            If not provided, the default value is used
+            If None provided, the default value is used
 
         """
         percentage = \
@@ -137,20 +140,21 @@ class Fan(object):
         self._percentage_off = percentage
         self._temperature_off = \
             self._system.calculate_temperature_value(self._percentage_off)
-        self._logger.debug(
-            'Percentage OFF set to %s%% (%s°C)',
-            self._percentage_off,
-            self._temperature_off
-            )
 
-    def set_temperature_on(self, temperature=None):
+    @property
+    def temperature_on(self):
+        """Start temperature recently saved."""
+        return self._temperature_on
+
+    @temperature_on.setter
+    def temperature_on(self, temperature=None):
         """Save start temperature.
 
         Arguments
         ---------
         temperature : float
             Temperature in centigrades at which the fan starts cooling.
-            If not provided the value calculated from default percentage
+            If None provided the value calculated from default percentage
             is used.
 
         """
@@ -158,17 +162,23 @@ class Fan(object):
         if temperature is not None:
             percentage = self._system.calculate_temperature_percentage(
                 temperature
-                )
-        self.set_percentage_on(percentage)
+            )
+        self.percentage_on = percentage
 
-    def set_temperature_off(self, temperature=None):
+    @property
+    def temperature_off(self):
+        """Stop temperature recently saved."""
+        return self._temperature_off
+
+    @temperature_off.setter
+    def temperature_off(self, temperature=None):
         """Save stop temperature.
 
         Arguments
         ---------
         temperature : float
             Temperature in centigrades at which the fan stops cooling.
-            If not provided the value calculated from default percentage
+            If None provided the value calculated from default percentage
             is used.
 
         """
@@ -176,45 +186,26 @@ class Fan(object):
         if temperature is not None:
             percentage = self._system.calculate_temperature_percentage(
                 temperature
-                )
-        self.set_percentage_off(percentage)
+            )
+        self.percentage_off = percentage
 
-    # -------------------------------------------------------------------------
-    # Getters
-    # -------------------------------------------------------------------------
-    def get_pin(self):
-        """Return microcomputer fan control pin name."""
-        return self._pin
+    @property
+    def temperature_max(self):
+        """Maximal SoC temperature in centigrades."""
+        return self._system.temperature_maximal
 
-    def get_status(self):
-        """Return status code recently saved."""
-        return self._status
+    @property
+    def temperature(self):
+        """Current SoC temperature in centigrades."""
+        return self._system.temperature
 
-    def get_percentage_on(self):
-        """Return start temperature percentage recently saved."""
-        return self._percentage_on
-
-    def get_percentage_off(self):
-        """Return stop temperature percentage recently saved."""
-        return self._percentage_off
-
-    def get_temperature_on(self):
-        """Return start temperature recently saved."""
-        return self._temperature_on
-
-    def get_temperature_off(self):
-        """Return stop temperature recently saved."""
-        return self._temperature_off
-
-    def get_temperature_max(self):
-        """Return maximal SoC temperature in centigrades."""
-        return self._system.get_temperature_maximal()
-
-    def get_temperature(self):
-        """Return current SoC temperature in centigrades."""
-        return self._system.get_temperature()
-
-    def get_percentage(self):
-        """Return current SoC temperature percentage."""
+    @property
+    def percentage(self):
+        """Current SoC temperature percentage."""
         return self._system.calculate_temperature_percentage(
-            self._system.get_temperature())
+            self.temperature)
+
+    def reset(self):
+        """Set all the default parameters."""
+        self.percentage_on = None
+        self.percentage_off = None

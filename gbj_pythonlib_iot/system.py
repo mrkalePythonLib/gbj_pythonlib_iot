@@ -6,7 +6,7 @@
   value, so that they are consistent.
 
 """
-__version__ = '0.3.0'
+__version__ = '0.4.0'
 __status__ = 'Beta'
 __author__ = 'Libor Gabaj'
 __copyright__ = 'Copyright 2019, ' + __author__
@@ -45,10 +45,11 @@ class System(object):
 
     def __init__(self, smoothing_factor=0.2):
         """Create the class instance - constructor."""
-        # Cache system maximal temperature
-        self._temperature_max = self.get_temperature_maximal()
-        # Cache current temperature in statistical filter object
-        self._filter = modFilter.StatFilterExponential(smoothing_factor)
+        # Statistical smoothing
+        self._temperature_max = None
+        self._filter = modFilter.ValueFilter(self.temperature_maximal)
+        self._smoothing = modFilter.Exponential(smoothing_factor)
+        self._smoothing.filter = self._filter
         # Logging
         self._logger = logging.getLogger(' '.join([__name__, __version__]))
         self._logger.debug(
@@ -68,7 +69,7 @@ class System(object):
         """Represent instance object officially."""
         msg = \
             f'{self.__class__.__name__}(' \
-            f'smoothing_factor={repr(self._filter.get_factor())})'
+            f'smoothing_factor={repr(self._smoothing.factor)})'
         return msg
 
     def _read_temperature(self, system_path):
@@ -99,36 +100,32 @@ class System(object):
             temperature = None
         return temperature
 
-    # -------------------------------------------------------------------------
-    # Getters
-    # -------------------------------------------------------------------------
-    def get_temperature(self):
+    @property
+    def temperature_maximal(self):
+        """System maximal temperature."""
+        if self._temperature_max is None:
+            temperature = self._read_temperature(
+                '/sys/class/thermal/thermal_zone0/trip_point_0_temp'
+            )
+            if temperature is None and modUtils.windows():
+                temperature = 75.0
+            self._temperature_max = temperature
+        return self._temperature_max
+
+    @property
+    def temperature(self):
         """Read system current temperature."""
         temperature = self._read_temperature(
             '/sys/class/thermal/thermal_zone0/temp'
-            )
+        )
         if temperature is None and modUtils.windows():
             temperature = float(random.randint(40, 70))
-        return self._filter.result(temperature)
+        return self._smoothing.result(temperature)
 
-    def get_temperature_maximal(self):
-        """Read system maximal temperature."""
-        # Get temperature from the cache
-        if hasattr(self, '_temperature_max') \
-                and self._temperature_max is not None:
-            return self._temperature_max
-        # Read temperature from the system
-        temperature = self._read_temperature(
-            '/sys/class/thermal/thermal_zone0/trip_point_0_temp'
-            )
-        if temperature is None and modUtils.windows():
-            temperature = 75.0
-        self._temperature_max = temperature  # Cache temperature
-        return temperature
-
-    def get_percentage(self):
+    @property
+    def percentage(self):
         """Read system current temperature and express it in percentage."""
-        return self.calculate_temperature_percentage(self._filter.result())
+        return self.calculate_temperature_percentage(self._smoothing.result())
 
     # -------------------------------------------------------------------------
     # Calculations
@@ -150,7 +147,7 @@ class System(object):
 
         """
         percentage = None
-        self.get_temperature_maximal()
+        self.temperature_maximal
         if self._temperature_max:
             percentage = temperature / self._temperature_max * 100.0
         return percentage
@@ -172,7 +169,7 @@ class System(object):
 
         """
         temperature = None
-        self.get_temperature_maximal()
+        self.temperature_maximal
         if self._temperature_max:
             temperature = percentage / 100.0 * self._temperature_max
         return temperature
