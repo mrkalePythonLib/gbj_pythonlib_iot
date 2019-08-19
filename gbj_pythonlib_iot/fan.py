@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """Module for supporting cooling fan."""
-__version__ = '0.4.0'
+__version__ = '0.5.0'
 __status__ = 'Beta'
 __author__ = 'Libor Gabaj'
 __copyright__ = 'Copyright 2019, ' + __author__
@@ -11,28 +11,7 @@ __email__ = 'libor.gabaj@gmail.com'
 
 
 import logging
-
 from . import system as iot_system
-
-
-###############################################################################
-# Constants
-###############################################################################
-_PERCON_DEF = 90.0
-_PERCON_MIN = 80.0
-_PERCON_MAX = 95.0
-"""float: Default, minimal, and maximal start temperature expressed
-   in percentage of maximal one.
-"""
-
-_PERCOFF_DEF = 60.0
-_PERCOFF_MIN = 50.0
-_PERCOFF_MAX = 75.0
-"""float: Default, minimal, and maximal stop temperature expressed
-   in percentage of maximal one.
-"""
-
-_PIN = ''
 
 
 ###############################################################################
@@ -46,6 +25,21 @@ class Fan(object):
     pin : str
         Microcomputer I/O pin name for controlling a cooling fan.
     """
+
+
+    _PERCON_DEF = 90.0
+    _PERCON_MIN = 80.0
+    _PERCON_MAX = 95.0
+    """float: Default, minimal, and maximal start temperature expressed
+    in percentage of maximal one.
+    """
+
+    _PERCOFF_DEF = 60.0
+    _PERCOFF_MIN = 50.0
+    _PERCOFF_MAX = 75.0
+    """float: Default, minimal, and maximal stop temperature expressed
+    in percentage of maximal one.
+"""
 
     def __init__(self, pin='PA13'):
         """Create the class instance - constructor."""
@@ -113,10 +107,10 @@ class Fan(object):
 
         """
         percentage = \
-            max(min(percentage or _PERCON_DEF, _PERCON_MAX), _PERCON_MIN)
+            max(min(percentage or self._PERCON_DEF,
+                    self._PERCON_MAX), self._PERCON_MIN)
         self._percentage_on = percentage
-        self._temperature_on = \
-            self._system.calculate_temperature_value(self._percentage_on)
+        self._temperature_on = self._system.perc2temp(self._percentage_on)
 
     @property
     def percentage_off(self):
@@ -136,10 +130,10 @@ class Fan(object):
 
         """
         percentage = \
-            max(min(percentage or _PERCOFF_DEF, _PERCOFF_MAX), _PERCOFF_MIN)
+            max(min(percentage or self._PERCOFF_DEF,
+                    self._PERCOFF_MAX), self._PERCOFF_MIN)
         self._percentage_off = percentage
-        self._temperature_off = \
-            self._system.calculate_temperature_value(self._percentage_off)
+        self._temperature_off = self._system.perc2temp(self._percentage_off)
 
     @property
     def temperature_on(self):
@@ -160,9 +154,7 @@ class Fan(object):
         """
         percentage = None
         if temperature is not None:
-            percentage = self._system.calculate_temperature_percentage(
-                temperature
-            )
+            percentage = self._system.temp2perc(temperature)
         self.percentage_on = percentage
 
     @property
@@ -184,9 +176,7 @@ class Fan(object):
         """
         percentage = None
         if temperature is not None:
-            percentage = self._system.calculate_temperature_percentage(
-                temperature
-            )
+            percentage = self._system.temp2perc(temperature)
         self.percentage_off = percentage
 
     @property
@@ -202,8 +192,7 @@ class Fan(object):
     @property
     def percentage(self):
         """Current SoC temperature percentage."""
-        return self._system.calculate_temperature_percentage(
-            self.temperature)
+        return self._system.temp2perc(self.temperature)
 
     def reset(self):
         """Set all the default parameters."""

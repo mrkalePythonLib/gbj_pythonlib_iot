@@ -6,7 +6,7 @@
   value, so that they are consistent.
 
 """
-__version__ = '0.4.0'
+__version__ = '0.5.0'
 __status__ = 'Beta'
 __author__ = 'Libor Gabaj'
 __copyright__ = 'Copyright 2019, ' + __author__
@@ -125,13 +125,13 @@ class System(object):
     @property
     def percentage(self):
         """Read system current temperature and express it in percentage."""
-        return self.calculate_temperature_percentage(self._smoothing.result())
+        return self.temp2perc(self._smoothing.result())
 
     # -------------------------------------------------------------------------
     # Calculations
     # -------------------------------------------------------------------------
-    def calculate_temperature_percentage(self, temperature):
-        """Calculate temperature percentage.
+    def temp2perc(self, temperature):
+        """Calculate percentage from temperature.
 
         Arguments
         ---------
@@ -152,8 +152,8 @@ class System(object):
             percentage = temperature / self._temperature_max * 100.0
         return percentage
 
-    def calculate_temperature_value(self, percentage):
-        """Calculate temperature value in centigrades.
+    def perc2temp(self, percentage):
+        """Calculate temperature value in centigrades from percentage.
 
         Arguments
         ---------
